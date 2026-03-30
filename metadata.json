@@ -1,0 +1,5 @@
+{
+  "name": "OpenRouter AI Agent",
+  "description": "A production-ready AI Agent built with Node.js and OpenRouter API, featuring streaming, tool calling, and conversation history.",
+  "requestFramePermissions": []
+}
