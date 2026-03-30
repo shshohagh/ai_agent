@@ -1,0 +1,54 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user-specific settings and profile information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The unique Firebase Auth ID." },
+        "email": { "type": "string", "format": "email", "description": "The user's email address." },
+        "displayName": { "type": "string", "description": "The user's display name." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the profile was created." }
+      },
+      "required": ["uid", "email"]
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "description": "A single message in a chat session.",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string", "enum": ["user", "assistant", "system"], "description": "The sender's role." },
+        "content": { "type": "string", "description": "The text content of the message." },
+        "timestamp": { "type": "string", "format": "date-time", "description": "When the message was sent." },
+        "userId": { "type": "string", "description": "The ID of the user who owns this message." }
+      },
+      "required": ["role", "content", "timestamp", "userId"]
+    },
+    "ChatSession": {
+      "title": "Chat Session",
+      "description": "A single conversation session.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The unique ID of the chat session." },
+        "title": { "type": "string", "description": "The title of the chat session." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the session was created." },
+        "userId": { "type": "string", "description": "The ID of the user who owns this session." }
+      },
+      "required": ["id", "title", "createdAt", "userId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile documents."
+    },
+    "/users/{userId}/chats/{chatId}": {
+      "schema": "ChatSession",
+      "description": "Individual chat sessions for a user."
+    },
+    "/users/{userId}/chats/{chatId}/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Messages within a specific chat session."
+    }
+  }
+}

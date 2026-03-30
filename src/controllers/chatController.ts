@@ -3,26 +3,18 @@ import { openRouterService } from '../services/openRouterService';
 import { Message } from '../types/chat';
 import { config } from '../config/config';
 
-// Simple in-memory history management
-const conversationHistory: Record<string, Message[]> = {};
-
 export class ChatController {
   async handleChat(req: Request, res: Response) {
-    const { message, stream, sessionId = 'default' } = req.body;
+    const { message, stream, history = [] } = req.body;
 
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
     }
 
-    // Initialize history if not exists
-    if (!conversationHistory[sessionId]) {
-      conversationHistory[sessionId] = [
-        { role: 'system', content: config.agent.systemPrompt }
-      ];
-    }
-
-    // Add user message to history
-    conversationHistory[sessionId].push({ role: 'user', content: message });
+    // Use history from frontend, or start fresh if none provided
+    const messages: Message[] = history.length > 0 
+      ? history 
+      : [{ role: 'system', content: config.agent.systemPrompt }, { role: 'user', content: message }];
 
     try {
       if (stream) {
@@ -30,25 +22,18 @@ export class ChatController {
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
 
-        let fullResponse = '';
-        const streamGenerator = openRouterService.sendMessageStream(conversationHistory[sessionId]);
+        const streamGenerator = openRouterService.sendMessageStream(messages);
 
         for await (const chunk of streamGenerator) {
-          fullResponse += chunk;
           res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
         }
 
-        // Add assistant response to history
-        conversationHistory[sessionId].push({ role: 'assistant', content: fullResponse });
         res.write('data: [DONE]\n\n');
         res.end();
       } else {
-        const response = await openRouterService.sendMessage(conversationHistory[sessionId]);
+        const response = await openRouterService.sendMessage(messages);
         const assistantMessage = response.choices[0].message;
         
-        // Add assistant response to history
-        conversationHistory[sessionId].push(assistantMessage);
-
         res.json({
           message: assistantMessage.content,
           usage: response.usage,
@@ -60,11 +45,8 @@ export class ChatController {
   }
 
   async clearHistory(req: Request, res: Response) {
-    const { sessionId = 'default' } = req.body;
-    conversationHistory[sessionId] = [
-      { role: 'system', content: config.agent.systemPrompt }
-    ];
-    res.json({ status: 'History cleared' });
+    // History is now managed on the client/Firestore, so this is a no-op or can be removed
+    res.json({ status: 'History management is now handled via Firestore' });
   }
 }
 
